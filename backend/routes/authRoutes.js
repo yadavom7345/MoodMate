@@ -5,10 +5,18 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '30d',
+    }
+  );
 };
 
 router.post('/signup', async (req, res) => {
@@ -39,7 +47,7 @@ router.post('/signup', async (req, res) => {
       name: name.trim(),
     });
 
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     res.status(201).json({
       success: true,
@@ -90,7 +98,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     res.status(200).json({
       success: true,
