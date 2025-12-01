@@ -60,7 +60,7 @@ export const semanticSearch = async (req, res) => {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const simplifiedEntries = entries.map(e => ({
-            id: e.id,
+            id: e._id || e.id,
             text: e.text.substring(0, 200),
             tags: e.tags
         }));
