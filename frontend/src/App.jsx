@@ -306,9 +306,9 @@ function App() {
             }
 
             let matchesMood = true;
-            if (moodFilter === 'happy') matchesMood = entry.moodScore >= 8;
-            else if (moodFilter === 'neutral') matchesMood = entry.moodScore >= 4 && entry.moodScore < 8;
-            else if (moodFilter === 'sad') matchesMood = entry.moodScore < 4;
+            if (moodFilter === 'happy') matchesMood = entry.moodScore >= 7;
+            else if (moodFilter === 'neutral') matchesMood = entry.moodScore >= 5 && entry.moodScore < 7;
+            else if (moodFilter === 'sad') matchesMood = entry.moodScore < 5;
 
             return matchesMood;
         });
