@@ -436,74 +436,72 @@ function App() {
                             exit={{ opacity: 0 }}
                             className="space-y-12"
                         >
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-2">
-                                    <Card className="h-full">
-                                        <div className="flex items-center justify-between mb-8">
-                                            <h3 className="font-bold text-xl text-dark flex items-center gap-3">
-                                                <div className="bg-orange-100 p-2 rounded-xl text-primary">
-                                                    <TrendingUp size={20} />
-                                                </div>
-                                                Mood Trends
-                                            </h3>
-                                            <div className="flex bg-slate-100/80 p-1.5 rounded-2xl">
-                                                {['week', 'month', 'year'].map(range => (
-                                                    <button
-                                                        key={range}
-                                                        onClick={() => setChartRange(range)}
-                                                        className={cn(
-                                                            "px-4 py-1.5 rounded-xl text-xs font-bold capitalize transition-all duration-300",
-                                                            chartRange === range
-                                                                ? "bg-white text-primary shadow-md scale-105"
-                                                                : "text-slate-400 hover:text-slate-600"
-                                                        )}
-                                                    >
-                                                        {range}
-                                                    </button>
-                                                ))}
+                            <div className="space-y-8">
+                                <Card className="h-full">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="font-bold text-xl text-dark flex items-center gap-3">
+                                            <div className="bg-orange-100 p-2 rounded-xl text-primary">
+                                                <TrendingUp size={20} />
                                             </div>
+                                            Mood Trends
+                                        </h3>
+                                        <div className="flex bg-slate-100/80 p-1.5 rounded-2xl">
+                                            {['week', 'month', 'year'].map(range => (
+                                                <button
+                                                    key={range}
+                                                    onClick={() => setChartRange(range)}
+                                                    className={cn(
+                                                        "px-4 py-1.5 rounded-xl text-xs font-bold capitalize transition-all duration-300",
+                                                        chartRange === range
+                                                            ? "bg-white text-primary shadow-md scale-105"
+                                                            : "text-slate-400 hover:text-slate-600"
+                                                    )}
+                                                >
+                                                    {range}
+                                                </button>
+                                            ))}
                                         </div>
-                                        <div className="h-72 w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <LineChart data={chartData}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                                    <XAxis
-                                                        dataKey="timestamp"
-                                                        type="number"
-                                                        domain={chartDomain}
-                                                        tickFormatter={(time) => format(new Date(time), 'MMM d')}
-                                                        stroke="#cbd5e1"
-                                                        fontSize={12}
-                                                        tickLine={false}
-                                                        axisLine={false}
-                                                        interval="preserveStartEnd"
-                                                        allowDataOverflow={true}
-                                                        dy={10}
-                                                    />
-                                                    <YAxis
-                                                        domain={[0, 10]}
-                                                        hide
-                                                    />
-                                                    <Tooltip
-                                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', padding: '12px' }}
-                                                        labelFormatter={(label) => format(new Date(label), 'PPP')}
-                                                    />
-                                                    <Line
-                                                        type="monotone"
-                                                        dataKey="moodScore"
-                                                        stroke="#FF9F1C"
-                                                        strokeWidth={4}
-                                                        dot={{ fill: '#FF9F1C', strokeWidth: 4, r: 6, stroke: '#fff' }}
-                                                        activeDot={{ r: 8, strokeWidth: 0, fill: '#E88D0C' }}
-                                                        animationDuration={1000}
-                                                    />
-                                                </LineChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </Card>
-                                </div>
+                                    </div>
+                                    <div className="h-72 w-full">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={chartData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                                <XAxis
+                                                    dataKey="timestamp"
+                                                    type="number"
+                                                    domain={chartDomain}
+                                                    tickFormatter={(time) => format(new Date(time), 'MMM d')}
+                                                    stroke="#cbd5e1"
+                                                    fontSize={12}
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                    interval="preserveStartEnd"
+                                                    allowDataOverflow={true}
+                                                    dy={10}
+                                                />
+                                                <YAxis
+                                                    domain={[0, 10]}
+                                                    hide
+                                                />
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                                                    labelFormatter={(label) => format(new Date(label), 'PPP')}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="moodScore"
+                                                    stroke="#FF9F1C"
+                                                    strokeWidth={4}
+                                                    dot={{ fill: '#FF9F1C', strokeWidth: 4, r: 6, stroke: '#fff' }}
+                                                    activeDot={{ r: 8, strokeWidth: 0, fill: '#E88D0C' }}
+                                                    animationDuration={1000}
+                                                />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </Card>
 
-                                <div className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     {todaysEntry && (
                                         <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-xl shadow-indigo-200 relative overflow-hidden group cursor-pointer" onClick={() => setSelectedEntry(todaysEntry)}>
                                             <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
