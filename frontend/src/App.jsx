@@ -282,9 +282,18 @@ function App() {
         return `Based on your history, doing "${bestTag[0]}" tends to improve your mood.`;
     }, [entries]);
 
+    const todaysEntry = useMemo(() => {
+        if (entries.length > 0) {
+            const latestEntry = entries[0];
+            if (latestEntry.createdAt && isSameDay(new Date(latestEntry.createdAt), new Date())) {
+                return latestEntry;
+            }
+        }
+        return null;
+    }, [entries]);
+
     const filteredEntries = useMemo(() => {
-        const hasEntryToday = entries.length > 0 && isSameDay(new Date(entries[0].createdAt || new Date()), new Date());
-        const entriesToFilter = hasEntryToday ? entries.slice(1) : entries;
+        const entriesToFilter = todaysEntry ? entries.slice(1) : entries;
 
         return entriesToFilter.filter(entry => {
             if (aiFilteredIds !== null) {
@@ -303,7 +312,7 @@ function App() {
 
             return matchesMood;
         });
-    }, [entries, searchQuery, moodFilter, aiFilteredIds]);
+    }, [entries, searchQuery, moodFilter, aiFilteredIds, todaysEntry]);
 
     const paginatedEntries = useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -495,6 +504,45 @@ function App() {
                                 </div>
 
                                 <div className="space-y-8">
+                                    {todaysEntry && (
+                                        <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-xl shadow-indigo-200 relative overflow-hidden group cursor-pointer" onClick={() => setSelectedEntry(todaysEntry)}>
+                                            <div className="absolute top-0 right-0 p-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                                            <div className="flex items-center justify-between mb-6 relative z-10">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                                                        <Sparkles size={20} className="text-yellow-300" />
+                                                    </div>
+                                                    <h3 className="font-bold text-lg tracking-wide">Today's Insight</h3>
+                                                </div>
+                                                <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md border border-white/10">
+                                                    {format(new Date(), 'MMM d')}
+                                                </span>
+                                            </div>
+
+                                            <div className="mb-6 relative z-10">
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="text-5xl filter drop-shadow-md animate-bounce-slow">
+                                                        {getMoodEmoji(todaysEntry.moodScore)}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-3xl font-bold">{todaysEntry.moodScore}/10</div>
+                                                        <div className="text-indigo-100 font-medium text-sm">Mood Score</div>
+                                                    </div>
+                                                </div>
+                                                <p className="text-white/90 line-clamp-3 leading-relaxed font-medium text-lg">
+                                                    "{todaysEntry.text}"
+                                                </p>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2 relative z-10">
+                                                {todaysEntry.tags.map(tag => (
+                                                    <span key={tag} className="px-3 py-1 bg-white/10 hover:bg-white/20 transition-colors rounded-lg text-xs font-bold border border-white/10 backdrop-blur-md">
+                                                        #{tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </Card>
+                                    )}
                                     <Card className="bg-gradient-to-br from-primary to-primary-dark text-white border-none shadow-primary/30">
                                         <div className="flex items-center gap-3 mb-4 opacity-90">
                                             <div className="bg-white/20 p-2 rounded-xl">
