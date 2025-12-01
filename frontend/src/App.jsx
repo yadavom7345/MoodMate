@@ -32,8 +32,10 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
+import config from './config';
+
 // --- API Calls ---
-const API_URL = 'http://localhost:3000/api';
+const API_URL = config.API_URL;
 
 // Helper to get token
 const getHeaders = () => {
