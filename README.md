@@ -60,4 +60,8 @@ Many people struggle to consistently understand their emotional well-being. Trad
 | `/api/ai/search` | POST | Semantic/Natural language search | Auth |
 | `/api/ai/analyze` | POST | Standalone sentiment analysis | Public |
 
+### AI Features
+Frontend - https://moodmate-frontend-delta.vercel.app/
+Backend - https://moodmate-backend-tswf.onrender.com 
+
 *(Note: Endpoints listed reflect the actual implementation)*
