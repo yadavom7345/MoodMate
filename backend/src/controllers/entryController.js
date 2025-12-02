@@ -61,8 +61,50 @@ export const createEntry = async (req, res) => {
 
 export const getEntries = async (req, res) => {
     try {
-        const entries = await JournalEntry.find({ userId: req.user.id }).sort({ createdAt: -1 });
-        res.json(entries);
+        const { page = 1, limit = 8, startDate, endDate, mood, search } = req.query;
+        const query = { userId: req.user.id };
+
+        // Date Filtering
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) query.createdAt.$gte = new Date(startDate);
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999); // Include the whole end day
+                query.createdAt.$lte = end;
+            }
+        }
+
+        // Mood Filtering
+        if (mood && mood !== 'all') {
+            if (mood === 'happy') query.moodScore = { $gte: 7 };
+            else if (mood === 'neutral') query.moodScore = { $gte: 5, $lt: 7 };
+            else if (mood === 'sad') query.moodScore = { $lt: 5 };
+        }
+
+        // Search Filtering
+        if (search) {
+            query.$or = [
+                { text: { $regex: search, $options: 'i' } },
+                { tags: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const total = await JournalEntry.countDocuments(query);
+        const entries = await JournalEntry.find(query)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(Number(limit));
+
+        res.json({
+            entries,
+            pagination: {
+                total,
+                pages: Math.ceil(total / limit),
+                page: Number(page),
+                limit: Number(limit)
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

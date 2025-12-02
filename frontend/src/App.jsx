@@ -47,16 +47,17 @@ const getHeaders = () => {
     };
 };
 
-async function fetchEntries() {
+async function fetchEntries(params = {}) {
     try {
-        const response = await fetch(`${API_URL}/entries`, {
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`${API_URL}/entries?${query}`, {
             headers: getHeaders()
         });
         if (!response.ok) throw new Error('Failed to fetch entries');
         return await response.json();
     } catch (error) {
         console.error("Fetch entries failed:", error);
-        return [];
+        return { entries: [], pagination: { total: 0, pages: 1, page: 1, limit: 8 } };
     }
 }
 
@@ -308,8 +309,11 @@ function App() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [moodFilter, setMoodFilter] = useState('all');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [chartRange, setChartRange] = useState('week');
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const ITEMS_PER_PAGE = 8;
 
     const [isSearchingAI, setIsSearchingAI] = useState(false);
@@ -321,12 +325,31 @@ function App() {
     // Load Entries
     useEffect(() => {
         if (!user) return;
-        setLoading(true);
-        fetchEntries().then(data => {
-            setEntries(data);
+
+        const loadEntries = async () => {
+            setLoading(true);
+            const params = {
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+                mood: moodFilter,
+                search: searchQuery,
+                startDate,
+                endDate
+            };
+
+            // If searching with AI, we might want to bypass standard pagination or handle it differently.
+            // For now, let's keep AI search separate and only fetch standard entries here if not AI searching.
+            if (!aiFilteredIds) {
+                const data = await fetchEntries(params);
+                setEntries(data.entries || []);
+                setTotalPages(data.pagination?.pages || 1);
+            }
             setLoading(false);
-        });
-    }, [user]);
+        };
+
+        const debounceTimer = setTimeout(loadEntries, 300);
+        return () => clearTimeout(debounceTimer);
+    }, [user, currentPage, moodFilter, searchQuery, startDate, endDate, aiFilteredIds]);
 
     // AI Search Debounce
     useEffect(() => {
@@ -397,34 +420,13 @@ function App() {
         return null;
     }, [entries]);
 
-    const filteredEntries = useMemo(() => {
-        const entriesToFilter = todaysEntry ? entries.slice(1) : entries;
+    // Client-side filtering removed in favor of backend filtering.
+    // However, for "Today's Entry" and "Chart", we might still need all entries or a separate fetch.
+    // For now, let's assume the chart uses the current paginated view OR we need a separate endpoint for stats.
+    // To keep it simple, the chart will reflect the current filtered view.
 
-        return entriesToFilter.filter(entry => {
-            if (aiFilteredIds !== null) {
-                if (!aiFilteredIds.includes(entry._id)) return false; // MongoDB uses _id
-            }
-            else {
-                const matchesKeyword = entry.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    entry.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-                if (searchQuery && !matchesKeyword) return false;
-            }
-
-            let matchesMood = true;
-            if (moodFilter === 'happy') matchesMood = entry.moodScore >= 7;
-            else if (moodFilter === 'neutral') matchesMood = entry.moodScore >= 5 && entry.moodScore < 7;
-            else if (moodFilter === 'sad') matchesMood = entry.moodScore < 5;
-
-            return matchesMood;
-        });
-    }, [entries, searchQuery, moodFilter, aiFilteredIds, todaysEntry]);
-
-    const paginatedEntries = useMemo(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredEntries.slice(start, start + ITEMS_PER_PAGE);
-    }, [filteredEntries, currentPage]);
-
-    const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
+    // We use 'entries' directly for the list now.
+    const displayEntries = entries;
 
     const handleSaveEntry = async () => {
         if (!entryText.trim() || !user) return;
@@ -712,42 +714,55 @@ function App() {
                             </div>
 
                             <div className="space-y-6">
-                                <div className="flex flex-col sm:flex-row gap-4 justify-between">
-                                    <div className="relative flex-1">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                                    <div className="relative w-full md:w-96 group">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={20} />
                                         <input
                                             type="text"
-                                            placeholder="Search entries (AI enabled)..."
-                                            className="w-full pl-12 pr-12 py-3 glass-input"
+                                            placeholder="Search entries or ask AI..."
+                                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400 font-medium"
                                             value={searchQuery}
-                                            onChange={e => setSearchQuery(e.target.value)}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
                                         />
-                                        {isSearchingAI && (
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                                <Sparkles className="animate-spin text-primary" size={20} />
-                                            </div>
-                                        )}
                                     </div>
-                                    <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-                                        {['all', 'happy', 'neutral', 'sad'].map(filter => (
-                                            <button
-                                                key={filter}
-                                                onClick={() => setMoodFilter(filter)}
-                                                className={cn(
-                                                    "px-4 py-2 rounded-2xl text-sm font-bold capitalize transition-all whitespace-nowrap",
-                                                    moodFilter === filter
-                                                        ? "bg-primary text-white shadow-lg shadow-primary/30"
-                                                        : "bg-white text-slate-500 hover:bg-slate-50"
-                                                )}
-                                            >
-                                                {filter}
-                                            </button>
-                                        ))}
+
+                                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                                        <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl">
+                                            <input
+                                                type="date"
+                                                value={startDate}
+                                                onChange={(e) => setStartDate(e.target.value)}
+                                                className="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 p-1"
+                                            />
+                                            <span className="text-slate-300">-</span>
+                                            <input
+                                                type="date"
+                                                value={endDate}
+                                                onChange={(e) => setEndDate(e.target.value)}
+                                                className="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 p-1"
+                                            />
+                                        </div>
+
+                                        <div className="flex bg-slate-50 p-1.5 rounded-2xl">
+                                            {['all', 'happy', 'neutral', 'sad'].map(mood => (
+                                                <button
+                                                    key={mood}
+                                                    onClick={() => setMoodFilter(mood)}
+                                                    className={cn(
+                                                        "px-4 py-2 rounded-xl text-sm font-bold capitalize transition-all duration-300",
+                                                        moodFilter === mood
+                                                            ? "bg-white text-primary shadow-md scale-105"
+                                                            : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                                    )}
+                                                >
+                                                    {mood}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    {paginatedEntries.map(entry => (
+                                    {entries.map(entry => (
                                         <Card key={entry._id} className="group hover:shadow-xl transition-all duration-300 border border-transparent hover:border-primary/10">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className={cn(
