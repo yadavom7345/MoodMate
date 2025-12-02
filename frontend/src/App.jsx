@@ -309,6 +309,7 @@ function App() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [moodFilter, setMoodFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('latest');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [chartRange, setChartRange] = useState('week');
@@ -333,6 +334,7 @@ function App() {
                 limit: ITEMS_PER_PAGE,
                 mood: moodFilter,
                 search: searchQuery,
+                sortBy,
                 startDate,
                 endDate
             };
@@ -349,7 +351,7 @@ function App() {
 
         const debounceTimer = setTimeout(loadEntries, 300);
         return () => clearTimeout(debounceTimer);
-    }, [user, currentPage, moodFilter, searchQuery, startDate, endDate, aiFilteredIds]);
+    }, [user, currentPage, moodFilter, searchQuery, sortBy, startDate, endDate, aiFilteredIds]);
 
     // AI Search Debounce
     useEffect(() => {
@@ -724,6 +726,19 @@ function App() {
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                         />
+                                    </div>
+
+                                    <div className="flex items-center gap-2 w-full md:w-auto">
+                                        <select
+                                            value={sortBy}
+                                            onChange={(e) => setSortBy(e.target.value)}
+                                            className="bg-white border-none text-sm font-bold text-slate-600 rounded-2xl py-3 pl-4 pr-8 focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-sm"
+                                        >
+                                            <option value="latest">Latest</option>
+                                            <option value="oldest">Oldest</option>
+                                            <option value="highest">Highest Rated</option>
+                                            <option value="lowest">Lowest Rated</option>
+                                        </select>
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">

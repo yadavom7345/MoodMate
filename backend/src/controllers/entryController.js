@@ -62,7 +62,7 @@ export const createEntry = async (req, res) => {
 
 export const getEntries = async (req, res) => {
     try {
-        const { page = 1, limit = 8, startDate, endDate, mood, search } = req.query;
+        const { page = 1, limit = 8, startDate, endDate, mood, search, sortBy = 'latest' } = req.query;
         const query = { userId: req.user.id };
 
         // Date Filtering
@@ -91,9 +91,15 @@ export const getEntries = async (req, res) => {
             ];
         }
 
+        // Sorting
+        let sortOptions = { createdAt: -1 }; // Default: Latest
+        if (sortBy === 'oldest') sortOptions = { createdAt: 1 };
+        else if (sortBy === 'highest') sortOptions = { moodScore: -1 };
+        else if (sortBy === 'lowest') sortOptions = { moodScore: 1 };
+
         const total = await JournalEntry.countDocuments(query);
         const entries = await JournalEntry.find(query)
-            .sort({ createdAt: -1 })
+            .sort(sortOptions)
             .skip((page - 1) * limit)
             .limit(Number(limit));
 
