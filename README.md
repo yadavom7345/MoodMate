@@ -39,13 +39,25 @@ Many people struggle to consistently understand their emotional well-being. Trad
 
 ## 7. API Endpoints
 
+### Authentication
 | Endpoint | Method | Description | Access |
 | :--- | :--- | :--- | :--- |
 | `/api/auth/register` | POST | Register new user | Public |
 | `/api/auth/login` | POST | Authenticate user | Public |
-| `/api/entries` | GET | Get paginated & filtered journal entries | Auth |
-| `/api/entries` | POST | Add new entry + AI analysis | Auth |
-| `/api/ai/search` | POST | Natural language / keyword search | Auth |
 | `/api/auth/me` | GET | Get current user profile | Auth |
+
+### Journal Entries
+| Endpoint | Method | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `/api/entries` | GET | Get entries. <br> **Params:** `page`, `limit`, `startDate`, `endDate`, `mood`, `search`, `sortBy` | Auth |
+| `/api/entries` | POST | Create new entry (triggers AI analysis) | Auth |
+| `/api/entries/:id` | PUT | Update an entry | Auth |
+| `/api/entries/:id` | DELETE | Delete an entry | Auth |
+
+### AI Features
+| Endpoint | Method | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `/api/ai/search` | POST | Semantic/Natural language search | Auth |
+| `/api/ai/analyze` | POST | Standalone sentiment analysis | Public |
 
 *(Note: Endpoints listed reflect the actual implementation)*
