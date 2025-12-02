@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import JournalEntry from '../models/JournalEntry.js';
 
 function fallbackAnalyze(text) {
     const lowerText = text.toLowerCase();
@@ -50,15 +51,22 @@ export const analyzeEntry = async (req, res) => {
 };
 
 export const semanticSearch = async (req, res) => {
-    const { query, entries } = req.body;
-    if (!query || !entries) return res.status(400).json({ error: "Query and entries are required" });
+    const { query } = req.body;
+    if (!query) return res.status(400).json({ error: "Query is required" });
 
     try {
+        // Fetch last 50 entries for context
+        const entries = await JournalEntry.find({ userId: req.user.id })
+            .sort({ createdAt: -1 })
+            .limit(50);
+
+        if (entries.length === 0) return res.json([]);
+
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const simplifiedEntries = entries.map(e => ({
-            id: e._id || e.id,
+            id: e._id,
             text: e.text.substring(0, 200),
             tags: e.tags
         }));
@@ -80,7 +88,10 @@ export const semanticSearch = async (req, res) => {
         const text = result.response.text();
         const cleanJson = text.replace(/```json|```/g, '').trim();
         const ids = JSON.parse(cleanJson);
-        res.json(ids);
+
+        // Filter the original entries to return full objects
+        const matchedEntries = entries.filter(e => ids.includes(e._id.toString()));
+        res.json(matchedEntries);
     } catch (error) {
         console.error("Semantic Search Failed:", error);
         res.json([]);

@@ -105,12 +105,12 @@ async function deleteEntry(id) {
     }
 }
 
-async function semanticSearch(queryText, entries) {
+async function semanticSearch(queryText) {
     try {
         const response = await fetch(`${API_URL}/ai/search`, {
             method: 'POST',
-            headers: getHeaders(), // Protected route? Maybe not needed if AI route is public, but let's send it.
-            body: JSON.stringify({ query: queryText, entries })
+            headers: getHeaders(),
+            body: JSON.stringify({ query: queryText })
         });
         return await response.json();
     } catch (error) {
@@ -382,16 +382,22 @@ function App() {
         const timer = setTimeout(async () => {
             if (searchQuery.trim().length > 3) {
                 setIsSearchingAI(true);
-                const ids = await semanticSearch(searchQuery, entries);
-                setAiFilteredIds(ids);
-                setIsSearchingAI(false);
+                try {
+                    const results = await semanticSearch(searchQuery);
+                    setEntries(results);
+                    setAiFilteredIds(true); // Flag to indicate we are in AI search mode
+                } catch (error) {
+                    console.error("AI Search error:", error);
+                } finally {
+                    setIsSearchingAI(false);
+                }
             } else {
                 setAiFilteredIds(null);
             }
         }, 800);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, entries]);
+    }, [searchQuery]);
 
 
     const { chartData, chartDomain } = useMemo(() => {
