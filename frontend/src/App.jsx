@@ -18,7 +18,8 @@ import {
     Sparkles,
     ChevronLeft,
     ChevronRight,
-    Activity
+    Activity,
+    Pencil
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -235,7 +236,7 @@ const EntryModal = ({ entry, onClose, onUpdate, onDelete }) => {
                                     {!isEditing && (
                                         <>
                                             <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500" title="Edit">
-                                                <Sparkles size={20} />
+                                                <Pencil size={20} />
                                             </button>
                                             <button onClick={() => onDelete(entry._id)} className="p-2 hover:bg-rose-50 text-rose-400 rounded-full transition-colors" title="Delete">
                                                 <LogOut size={20} />
