@@ -6,11 +6,12 @@ import { analyzeEntry as aiAnalyze } from './aiController.js';
 // For now, let's keep it simple: The frontend calls /analyze to get data, then calls /entries to save it.
 // OR: We can do it all in one go here. Let's do it all in one go for better UX (one API call).
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 
 async function getAiAnalysis(text) {
     try {
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const prompt = `
       Analyze the following journal entry and return a JSON object with exactly two keys:

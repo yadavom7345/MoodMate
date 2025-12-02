@@ -1,8 +1,4 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import dotenv from 'dotenv';
-dotenv.config();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 function fallbackAnalyze(text) {
     const lowerText = text.toLowerCase();
@@ -21,6 +17,7 @@ export const analyzeEntry = async (req, res) => {
     if (!text) return res.status(400).json({ error: "Text is required" });
 
     try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         const prompt = `
       Analyze the following journal entry and return a JSON object with exactly two keys:
@@ -57,6 +54,7 @@ export const semanticSearch = async (req, res) => {
     if (!query || !entries) return res.status(400).json({ error: "Query and entries are required" });
 
     try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const simplifiedEntries = entries.map(e => ({
