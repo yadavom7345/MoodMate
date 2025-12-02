@@ -322,6 +322,7 @@ function App() {
 
     const [entryText, setEntryText] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [todaysEntry, setTodaysEntry] = useState(null);
 
     // Load Entries
     useEffect(() => {
@@ -352,6 +353,29 @@ function App() {
         const debounceTimer = setTimeout(loadEntries, 300);
         return () => clearTimeout(debounceTimer);
     }, [user, currentPage, moodFilter, searchQuery, sortBy, startDate, endDate, aiFilteredIds]);
+
+    // Load Today's Entry separately
+    useEffect(() => {
+        if (!user) return;
+        const loadTodaysEntry = async () => {
+            try {
+                const data = await fetchEntries({ limit: 1, sortBy: 'latest' });
+                if (data.entries && data.entries.length > 0) {
+                    const latest = data.entries[0];
+                    if (isSameDay(new Date(latest.createdAt), new Date())) {
+                        setTodaysEntry(latest);
+                    } else {
+                        setTodaysEntry(null);
+                    }
+                } else {
+                    setTodaysEntry(null);
+                }
+            } catch (error) {
+                console.error("Failed to load today's entry:", error);
+            }
+        };
+        loadTodaysEntry();
+    }, [user, entries]); // Re-check when entries change (e.g. after add/delete)
 
     // AI Search Debounce
     useEffect(() => {
@@ -412,15 +436,7 @@ function App() {
         return `Based on your history, doing "${bestTag[0]}" tends to improve your mood.`;
     }, [entries]);
 
-    const todaysEntry = useMemo(() => {
-        if (entries.length > 0) {
-            const latestEntry = entries[0];
-            if (latestEntry.createdAt && isSameDay(new Date(latestEntry.createdAt), new Date())) {
-                return latestEntry;
-            }
-        }
-        return null;
-    }, [entries]);
+
 
     // Client-side filtering removed in favor of backend filtering.
     // However, for "Today's Entry" and "Chart", we might still need all entries or a separate fetch.
