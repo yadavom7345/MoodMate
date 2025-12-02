@@ -74,6 +74,35 @@ async function createEntry(text) {
     }
 }
 
+async function updateEntry(id, updates) {
+    try {
+        const response = await fetch(`${API_URL}/entries/${id}`, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(updates)
+        });
+        if (!response.ok) throw new Error('Failed to update entry');
+        return await response.json();
+    } catch (error) {
+        console.error("Update entry failed:", error);
+        throw error;
+    }
+}
+
+async function deleteEntry(id) {
+    try {
+        const response = await fetch(`${API_URL}/entries/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to delete entry');
+        return await response.json();
+    } catch (error) {
+        console.error("Delete entry failed:", error);
+        throw error;
+    }
+}
+
 async function semanticSearch(queryText, entries) {
     try {
         const response = await fetch(`${API_URL}/ai/search`, {
@@ -129,8 +158,31 @@ const Card = ({ children, className, onClick }) => (
     </motion.div>
 );
 
-const EntryModal = ({ entry, onClose }) => {
+const EntryModal = ({ entry, onClose, onUpdate, onDelete }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedText, setEditedText] = useState('');
+    const [editedTags, setEditedTags] = useState('');
+    const [editedDate, setEditedDate] = useState('');
+
+    useEffect(() => {
+        if (entry) {
+            setEditedText(entry.text);
+            setEditedTags(entry.tags.join(', '));
+            setEditedDate(entry.createdAt ? new Date(entry.createdAt).toISOString().slice(0, 16) : '');
+            setIsEditing(false);
+        }
+    }, [entry]);
+
     if (!entry) return null;
+
+    const handleSave = () => {
+        onUpdate(entry._id, {
+            text: editedText,
+            tags: editedTags.split(',').map(t => t.trim()).filter(t => t),
+            createdAt: editedDate
+        });
+        setIsEditing(false);
+    };
 
     return (
         <AnimatePresence>
@@ -160,31 +212,83 @@ const EntryModal = ({ entry, onClose }) => {
                                         {getMoodEmoji(entry.moodScore)}
                                     </div>
                                     <div>
-                                        <div className="font-bold text-dark text-xl">
-                                            {entry.createdAt ? format(new Date(entry.createdAt), 'PPP') : 'Just now'}
-                                        </div>
-                                        <div className="text-sm font-medium text-slate-400">
-                                            {entry.createdAt ? format(new Date(entry.createdAt), 'p') : ''}
-                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                type="datetime-local"
+                                                value={editedDate}
+                                                onChange={e => setEditedDate(e.target.value)}
+                                                className="font-bold text-dark text-lg bg-slate-50 border border-slate-200 rounded-lg px-2 py-1"
+                                            />
+                                        ) : (
+                                            <>
+                                                <div className="font-bold text-dark text-xl">
+                                                    {entry.createdAt ? format(new Date(entry.createdAt), 'PPP') : 'Just now'}
+                                                </div>
+                                                <div className="text-sm font-medium text-slate-400">
+                                                    {entry.createdAt ? format(new Date(entry.createdAt), 'p') : ''}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
-                                <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                                    <LogOut className="rotate-45 text-slate-400" size={24} />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {!isEditing && (
+                                        <>
+                                            <button onClick={() => setIsEditing(true)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500" title="Edit">
+                                                <Sparkles size={20} />
+                                            </button>
+                                            <button onClick={() => onDelete(entry._id)} className="p-2 hover:bg-rose-50 text-rose-400 rounded-full transition-colors" title="Delete">
+                                                <LogOut size={20} />
+                                            </button>
+                                        </>
+                                    )}
+                                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                                        <LogOut className="rotate-45 text-slate-400" size={24} />
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="prose prose-slate max-w-none mb-8">
-                                <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">
-                                    {entry.text}
-                                </p>
+                            <div className="mb-8">
+                                {isEditing ? (
+                                    <textarea
+                                        value={editedText}
+                                        onChange={e => setEditedText(e.target.value)}
+                                        className="w-full h-64 p-4 text-lg leading-relaxed bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    />
+                                ) : (
+                                    <p className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">
+                                        {entry.text}
+                                    </p>
+                                )}
                             </div>
 
-                            <div className="flex flex-wrap gap-2 pt-6 border-t border-slate-100">
-                                {entry.tags.map(tag => (
-                                    <span key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-600 text-sm font-semibold rounded-full border border-slate-100">
-                                        #{tag}
-                                    </span>
-                                ))}
+                            <div className="flex flex-col gap-4 pt-6 border-t border-slate-100">
+                                {isEditing ? (
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-500 mb-2">Tags (comma separated)</label>
+                                        <input
+                                            type="text"
+                                            value={editedTags}
+                                            onChange={e => setEditedTags(e.target.value)}
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {entry.tags.map(tag => (
+                                            <span key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-600 text-sm font-semibold rounded-full border border-slate-100">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {isEditing && (
+                                    <div className="flex justify-end gap-3 mt-4">
+                                        <Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+                                        <Button onClick={handleSave}>Save Changes</Button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </motion.div>
@@ -335,6 +439,29 @@ function App() {
             alert("Failed to save entry. Check console.");
         } finally {
             setIsAnalyzing(false);
+        }
+    };
+
+    const handleUpdateEntry = async (id, updates) => {
+        try {
+            const updatedEntry = await updateEntry(id, updates);
+            setEntries(entries.map(e => e._id === id ? updatedEntry : e));
+            setSelectedEntry(updatedEntry); // Update the modal view
+        } catch (error) {
+            console.error("Error updating entry:", error);
+            alert("Failed to update entry");
+        }
+    };
+
+    const handleDeleteEntry = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this entry?")) return;
+        try {
+            await deleteEntry(id);
+            setEntries(entries.filter(e => e._id !== id));
+            setSelectedEntry(null); // Close modal
+        } catch (error) {
+            console.error("Error deleting entry:", error);
+            alert("Failed to delete entry");
         }
     };
 
@@ -688,7 +815,12 @@ function App() {
                     )}
                 </AnimatePresence>
 
-                <EntryModal entry={selectedEntry} onClose={() => setSelectedEntry(null)} />
+                <EntryModal
+                    entry={selectedEntry}
+                    onClose={() => setSelectedEntry(null)}
+                    onUpdate={handleUpdateEntry}
+                    onDelete={handleDeleteEntry}
+                />
             </main>
         </div>
     );

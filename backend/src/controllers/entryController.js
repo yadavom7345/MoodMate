@@ -67,3 +67,52 @@ export const getEntries = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const updateEntry = async (req, res) => {
+    const { id } = req.params;
+    const { text, tags, createdAt } = req.body;
+
+    try {
+        const entry = await JournalEntry.findById(id);
+
+        if (!entry) {
+            return res.status(404).json({ message: 'Entry not found' });
+        }
+
+        // Check ownership
+        if (entry.userId.toString() !== req.user.id) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        entry.text = text || entry.text;
+        entry.tags = tags || entry.tags;
+        if (createdAt) entry.createdAt = createdAt;
+
+        const updatedEntry = await entry.save();
+        res.json(updatedEntry);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const deleteEntry = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const entry = await JournalEntry.findById(id);
+
+        if (!entry) {
+            return res.status(404).json({ message: 'Entry not found' });
+        }
+
+        // Check ownership
+        if (entry.userId.toString() !== req.user.id) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        await entry.deleteOne();
+        res.json({ message: 'Entry removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
